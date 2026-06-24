@@ -207,7 +207,34 @@ function startScanner() {
   }
 }
 
-function _doStartScanner() {
+async function _doStartScanner() {
+  // Explicitly request camera permission before initialising the scanner so
+  // the browser shows the permission prompt (rather than failing silently).
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Camera not supported on this device.', 'error');
+    closeScanner();
+    return;
+  }
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+  } catch (err) {
+    console.error('Camera permission error:', err);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      showToast('Camera access denied. Please allow camera in your browser settings.', 'error');
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      showToast('No camera found on this device.', 'error');
+    } else {
+      showToast('Camera unavailable: ' + err.message, 'error');
+    }
+    closeScanner();
+    return;
+  }
+
+  // Release the test stream – html5-qrcode will open its own
+  stream.getTracks().forEach((t) => t.stop());
+
   state.scanner = new Html5Qrcode('reader', { verbose: false });
 
   const scanConfig = {
