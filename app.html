@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Part Scrapper – barcode scanning parts list app." />
+  <meta name="theme-color" content="#005DAA" />
+
+  <!-- PWA meta for iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PartScan" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+
+  <title>Part Scrapper</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<!-- Toast notifications -->
+<div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div id="app">
+
+  <!-- ============================================================
+       VIEW: HOME
+       ============================================================ -->
+  <div class="view active" id="view-home">
+    <!-- App Bar -->
+    <header class="app-bar">
+      <span class="app-bar-title">⚙️ Part Scrapper</span>
+      <button class="app-bar-action hidden" id="install-btn"
+              onclick="promptInstall()" title="Install App" aria-label="Install App">
+        ⬇️
+      </button>
+    </header>
+
+    <!-- Hero -->
+    <div class="home-hero">
+      <div class="home-hero-icon">📦</div>
+      <h1>Parts Scanner</h1>
+      <p>Scan barcodes to build a parts list. Export or share as CSV.</p>
+    </div>
+
+    <!-- Stats & Actions -->
+    <div class="home-actions">
+      <!-- Stats -->
+      <div class="home-stats">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-jobs">—</div>
+          <div class="stat-label">Saved Jobs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-items">—</div>
+          <div class="stat-label">Active Items</div>
+        </div>
+      </div>
+
+      <!-- Primary actions -->
+      <button class="btn btn-accent" onclick="startNewJob()">
+        <span class="btn-icon">➕</span> New Job
+      </button>
+
+      <button class="btn btn-primary" onclick="resumeActiveJob()" id="resume-job-btn" style="display:none">
+        <span class="btn-icon">▶️</span> Resume Current Job
+      </button>
+
+      <button class="btn btn-outline" onclick="renderHistory()">
+        <span class="btn-icon">📁</span> View History
+      </button>
+    </div>
+  </div><!-- /view-home -->
+
+
+  <!-- ============================================================
+       VIEW: ACTIVE JOB
+       ============================================================ -->
+  <div class="view" id="view-job">
+    <!-- App Bar -->
+    <header class="app-bar">
+      <button class="app-bar-back" onclick="goBack()" aria-label="Back">←</button>
+      <span class="app-bar-title" id="job-title">Job</span>
+      <button class="app-bar-action" onclick="exportJob()" title="Export CSV" aria-label="Export CSV">📤</button>
+    </header>
+
+    <div class="job-view">
+      <!-- Meta bar -->
+      <div class="job-meta">
+        <span class="job-meta-label">Items in this job</span>
+        <span class="job-item-count" id="item-count-badge">0 items</span>
+      </div>
+
+      <!-- Items table / empty state -->
+      <div class="items-container">
+        <div id="items-empty" class="empty-state">
+          <div class="empty-state-icon">📷</div>
+          <h3>No items scanned yet</h3>
+          <p>Tap <strong>Scan Item</strong> below to begin scanning barcodes.</p>
+        </div>
+
+        <table class="items-table" id="items-table" aria-label="Scanned items">
+          <thead>
+            <tr>
+              <th scope="col">Part #</th>
+              <th scope="col">S-Number</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Sticky Footer -->
+      <div class="job-footer">
+        <button class="btn btn-success" onclick="openScanner()">
+          <span class="btn-icon">📷</span> Scan Item
+        </button>
+        <button class="btn btn-primary" onclick="exportJob()">
+          <span class="btn-icon">📤</span> Export CSV
+        </button>
+      </div>
+    </div>
+  </div><!-- /view-job -->
+
+
+  <!-- ============================================================
+       VIEW: HISTORY
+       ============================================================ -->
+  <div class="view" id="view-history">
+    <!-- App Bar -->
+    <header class="app-bar">
+      <button class="app-bar-back" onclick="goBack()" aria-label="Back">←</button>
+      <span class="app-bar-title">📁 Job History</span>
+    </header>
+
+    <div class="history-content" id="history-list">
+      <!-- Filled by renderHistory() -->
+    </div>
+  </div><!-- /view-history -->
+
+</div><!-- /#app -->
+
+
+<!-- ============================================================
+     SCANNER MODAL (full-screen camera overlay)
+     ============================================================ -->
+<div class="modal-overlay scanner-overlay hidden" id="scanner-overlay" role="dialog"
+     aria-label="Barcode scanner" aria-modal="true">
+  <div class="scanner-modal">
+    <!-- Scanner header -->
+    <div class="scanner-header">
+      <div style="width:40px"></div><!-- spacer -->
+      <span class="scanner-title" id="scan-step-label">📦 Scan Part Number barcode</span>
+      <button class="scanner-close-btn" onclick="closeScanner()" aria-label="Close scanner">✕</button>
+    </div>
+
+    <!-- Camera view -->
+    <div id="scanner-container">
+      <div id="reader"></div>
+
+      <!-- Targeting reticle overlay -->
+      <div class="scan-reticle">
+        <div class="scan-reticle-corners"></div>
+      </div>
+      <div class="scan-laser"></div>
+    </div>
+
+    <!-- Bottom hint -->
+    <div class="scan-hint">
+      <div class="scan-step">
+        <div class="scan-step-dot"></div>
+        <span id="scan-hint-text">Point camera at a barcode</span>
+      </div>
+      <br />
+      <button class="scan-skip-btn" onclick="skipScanStep()">⏭ Skip this scan</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     ITEM EDIT / ADD MODAL
+     ============================================================ -->
+<div class="modal-overlay hidden" id="item-modal-overlay" role="dialog"
+     aria-label="Add or edit item" aria-modal="true">
+  <div class="modal-sheet" role="document">
+    <div class="modal-sheet-handle"></div>
+
+    <h2 id="item-modal-title">➕ Add Item</h2>
+    <p class="modal-subtitle" id="item-modal-subtitle">
+      Review and edit the scanned data, then tap Add to List.
+    </p>
+
+    <!-- Scanned values preview -->
+    <div class="field">
+      <div id="pn-scanned-badge" class="field-scanned-badge hidden">
+        ✅ Scanned
+      </div>
+      <label for="modal-part-number">Part Number</label>
+      <input type="text" id="modal-part-number"
+             placeholder="e.g. 167986-00"
+             autocomplete="off" autocorrect="off" autocapitalize="characters"
+             spellcheck="false" />
+      <p class="field-hint">Barcode value for the part number label</p>
+    </div>
+
+    <div class="field">
+      <div id="sn-scanned-badge" class="field-scanned-badge hidden">
+        ✅ Scanned
+      </div>
+      <label for="modal-s-number">S-Number</label>
+      <input type="text" id="modal-s-number"
+             placeholder="e.g. S4015978"
+             autocomplete="off" autocorrect="off" autocapitalize="characters"
+             spellcheck="false" />
+      <p class="field-hint">Barcode value for the S-number label</p>
+    </div>
+
+    <div class="field">
+      <label for="modal-quantity">Quantity</label>
+      <input type="number" id="modal-quantity"
+             value="1" min="1" max="99999"
+             inputmode="numeric" pattern="[0-9]*" />
+    </div>
+
+    <!-- Action buttons -->
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeItemModal()">
+        ✕ Cancel
+      </button>
+      <button class="btn btn-accent" id="item-modal-submit-btn"
+              onclick="submitItemModal()">
+        ✅ Add to List
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     CONFIRM DELETE DIALOG
+     ============================================================ -->
+<div class="modal-overlay hidden" id="confirm-overlay" role="dialog"
+     aria-label="Confirm delete" aria-modal="true">
+  <div class="confirm-dialog">
+    <div class="confirm-icon">⚠️</div>
+    <h3>Delete Item?</h3>
+    <p>Are you sure you want to delete
+      <strong id="confirm-item-label">this item</strong>?
+      This cannot be undone.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<!-- html5-qrcode barcode scanning library (CDN) -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<!-- App scripts -->
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+  function resumeActiveJob() {
+    if (state.currentJob) {
+      renderJobView();
+    }
+  }
+</script>
+</body>
+</html>

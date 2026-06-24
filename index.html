@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Part Scrapper – scan barcodes to quickly build a parts list right from your phone." />
+  <meta name="theme-color" content="#003C61" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+
+  <title>Part Scrapper</title>
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* Landing-page specific overrides */
+    body { background: var(--primary-dark); }
+  </style>
+</head>
+<body class="landing-body">
+
+  <!-- Logo -->
+  <div class="landing-logo">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Barcode icon -->
+      <rect x="6"  y="14" width="6"  height="36" fill="white"/>
+      <rect x="15" y="14" width="3"  height="36" fill="white"/>
+      <rect x="21" y="14" width="8"  height="36" fill="white"/>
+      <rect x="32" y="14" width="3"  height="36" fill="white"/>
+      <rect x="38" y="14" width="6"  height="36" fill="white"/>
+      <rect x="47" y="14" width="3"  height="36" fill="white"/>
+      <rect x="53" y="14" width="5"  height="36" fill="white"/>
+      <!-- Scan line -->
+      <rect x="4" y="30" width="56" height="4" fill="#FFC845" opacity="0.9"/>
+    </svg>
+  </div>
+
+  <h1 class="landing-title">Part Scrapper</h1>
+  <p class="landing-subtitle">
+    Scan barcodes with your phone camera to instantly build a parts list.
+    Export to CSV and share with one tap.
+  </p>
+
+  <a href="app.html" class="landing-cta">
+    <span>📷</span>
+    <span>Open App</span>
+  </a>
+
+  <!-- Feature highlights -->
+  <div class="landing-features">
+    <div class="landing-feature">
+      <div class="feat-icon">📷</div>
+      <p>Camera barcode scanning</p>
+    </div>
+    <div class="landing-feature">
+      <div class="feat-icon">📋</div>
+      <p>Parts list &amp; job history</p>
+    </div>
+    <div class="landing-feature">
+      <div class="feat-icon">📤</div>
+      <p>Export &amp; share CSV</p>
+    </div>
+    <div class="landing-feature">
+      <div class="feat-icon">📶</div>
+      <p>Works offline</p>
+    </div>
+  </div>
+
+  <p class="landing-footer">Works on Android &amp; iPhone · No account required</p>
+
+  <script>
+    // Register service worker from landing page too
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js');
+    }
+  </script>
+</body>
+</html>

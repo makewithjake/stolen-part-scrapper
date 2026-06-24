@@ -1,0 +1,26 @@
+{
+  "name": "Part Scrapper",
+  "short_name": "PartScan",
+  "description": "Scan and track parts for scrapping – quickly build a parts list using your phone camera.",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#003C61",
+  "theme_color": "#005DAA",
+  "orientation": "portrait-primary",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
